@@ -79,13 +79,13 @@ func Equal(v1, v2 Vector3) bool {
 }
 
 // Length returns the length of the Vector3
-func (vec *Vector3) Length() float64 {
-	return length(vec)
+func (vec Vector3) Length() float64 {
+	return length(&vec)
 }
 
 // LengthSquared returns the squared length of the Vector3
-func (vec *Vector3) LengthSquared() float64 {
-	return lengthSquared(vec)
+func (vec Vector3) LengthSquared() float64 {
+	return lengthSquared(&vec)
 }
 
 // Package Functions

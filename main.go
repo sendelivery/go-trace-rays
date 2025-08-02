@@ -2,15 +2,24 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"time"
 
 	"github.com/sendelivery/go-trace-rays/color"
+	"github.com/sendelivery/go-trace-rays/hittable"
+	"github.com/sendelivery/go-trace-rays/hittable/sphere"
+	"github.com/sendelivery/go-trace-rays/intervals"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
-func rayColor(r ray.Ray) color.Color {
-	dampen := 0.5
+const dampen = 0.5
+
+func rayColor(r ray.Ray, world hittable.Hittabler) color.Color {
+	if hr, ok := world.Hit(r, intervals.New(0, math.Inf(1))); ok {
+		return vec3.Mulf(vec3.Add(hr.Normal(), color.New(1, 1, 1)), 0.5)
+	}
 
 	unitDirection := vec3.UnitVector(r.Direction())
 	a := dampen * (unitDirection.Y() + 1)
@@ -26,13 +35,19 @@ func rayColor(r ray.Ray) color.Color {
 func main() {
 	// Image setup
 	aspectRatio := 16.0 / 9.0
-	imageWidth := 400
+	imageWidth := 800
 
 	// Calculate image height, ensuring it's at least 1
 	imageHeight := int(float64(imageWidth) / aspectRatio)
 	if imageHeight < 1 {
 		imageHeight = 1
 	}
+
+	// World
+	var world hittable.HittableList
+	s1 := sphere.New(vec3.New(0, 0, -1), 0.5)
+	s2 := sphere.New(vec3.New(0, -100.5, -1), 100)
+	world.Add(&s1, &s2)
 
 	// Camera setup
 	focalLength := 1.0 // Distance between camera centre and viewport
@@ -62,6 +77,8 @@ func main() {
 	// Render
 	fmt.Printf("P3\n%d %d\n255\n", imageWidth, imageHeight)
 
+	start := time.Now()
+
 	for j := range imageHeight {
 		fmt.Fprintf(os.Stderr, "\rScanlines remaining: %d ", imageHeight-j)
 		for i := range imageWidth {
@@ -76,10 +93,12 @@ func main() {
 			rayDirection := vec3.Sub(pixelCentre, cameraCentre)
 			r := ray.New(cameraCentre, rayDirection)
 
-			col := rayColor(r)
+			col := rayColor(r, &world)
 			color.WriteColor(os.Stdout, col)
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "\rDone.                 \n")
+	elapsed := time.Since(start).Milliseconds()
+
+	fmt.Fprintf(os.Stderr, "\rDone in %dms.         \n", elapsed)
 }

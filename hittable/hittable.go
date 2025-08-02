@@ -10,7 +10,7 @@ type Hittabler interface {
 	// Hit takes in a Ray and a range, returning a pointer to a HitRecord and a bool
 	// indicating if the object was hit by the ray. The pointer will be nil and the bool
 	// false if it was not hit.
-	Hit(r ray.Ray, rt intervals.Interval) (hr *HitRecord, ok bool)
+	Hit(r ray.Ray, rt intervals.Interval) (HitRecord, bool)
 }
 
 type HitRecord struct {
@@ -46,8 +46,8 @@ func (hl *HittableList) Add(o ...Hittabler) {
 	hl.objects = append(hl.objects, o...)
 }
 
-func (hl *HittableList) Hit(r ray.Ray, rt intervals.Interval) (hr *HitRecord, ok bool) {
-	var result *HitRecord
+func (hl HittableList) Hit(r ray.Ray, rt intervals.Interval) (HitRecord, bool) {
+	var result HitRecord
 	var hitAnything bool
 	closest := rt.Max
 

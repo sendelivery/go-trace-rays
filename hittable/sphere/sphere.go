@@ -18,7 +18,7 @@ func New(centre vec3.Vector3, radius float64) Sphere {
 	return Sphere{centre, math.Max(0, radius)}
 }
 
-func (s *Sphere) Hit(r ray.Ray, rt intervals.Interval) (hr *hittable.HitRecord, ok bool) {
+func (s Sphere) Hit(r ray.Ray, rt intervals.Interval) (hittable.HitRecord, bool) {
 	oc := vec3.Sub(s.centre, r.Origin())
 	a := r.Direction().LengthSquared()
 	h := vec3.Dot(r.Direction(), oc)
@@ -26,7 +26,7 @@ func (s *Sphere) Hit(r ray.Ray, rt intervals.Interval) (hr *hittable.HitRecord, 
 
 	discriminant := h*h - a*c
 	if discriminant < 0 {
-		return nil, false
+		return hittable.HitRecord{}, false
 	}
 
 	sqrtd := math.Sqrt(discriminant)
@@ -36,11 +36,11 @@ func (s *Sphere) Hit(r ray.Ray, rt intervals.Interval) (hr *hittable.HitRecord, 
 	if !rt.Surrounds(root) {
 		root = (h + sqrtd) / a
 		if !rt.Surrounds(root) {
-			return nil, false
+			return hittable.HitRecord{}, false
 		}
 	}
 
-	hr = &hittable.HitRecord{
+	hr := hittable.HitRecord{
 		T:     root,
 		Point: r.At(root),
 	}

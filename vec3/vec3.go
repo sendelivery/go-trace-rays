@@ -3,6 +3,8 @@ package vec3
 import (
 	"fmt"
 	"math"
+
+	utility "github.com/sendelivery/go-trace-rays/utlity"
 )
 
 type Vector3 struct {
@@ -11,6 +13,41 @@ type Vector3 struct {
 
 func New(x, y, z float64) Vector3 {
 	return Vector3{x, y, z}
+}
+
+func NewRandom() Vector3 {
+	return Vector3{
+		utility.Random(),
+		utility.Random(),
+		utility.Random(),
+	}
+}
+
+func NewRandomN(min, max float64) Vector3 {
+	return Vector3{
+		utility.RandomN(min, max),
+		utility.RandomN(min, max),
+		utility.RandomN(min, max),
+	}
+}
+
+func NewRandomUnitVector() Vector3 {
+	for {
+		p := NewRandomN(-1, 1)
+		lensq := p.LengthSquared()
+		if 1e-160 < lensq && lensq <= 1 {
+			return Div(p, math.Sqrt(lensq))
+		}
+	}
+}
+
+func NewRandomOnHemisphere(normal Vector3) Vector3 {
+	u := NewRandomUnitVector()
+	if Dot(u, normal) > 0.0 {
+		// In the same hemisphere as the normal
+		return u
+	}
+	return Mulf(u, -1) // Invert the vector
 }
 
 func Duplicate(v Vector3) Vector3 {

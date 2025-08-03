@@ -3,6 +3,7 @@ package color
 import (
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/sendelivery/go-trace-rays/intervals"
 	"github.com/sendelivery/go-trace-rays/vec3"
@@ -15,9 +16,9 @@ func New(r, g, b float64) Color {
 }
 
 func WriteColor(w io.Writer, pixelColor Color) {
-	r := pixelColor.X()
-	g := pixelColor.Y()
-	b := pixelColor.Z()
+	r := linearToGamma(pixelColor.X())
+	g := linearToGamma(pixelColor.Y())
+	b := linearToGamma(pixelColor.Z())
 
 	// Translate [0,1] component values to the byte range [0,255]
 	intensity := intervals.New(0, 0.999)
@@ -26,4 +27,11 @@ func WriteColor(w io.Writer, pixelColor Color) {
 	bByte := int(256 * intensity.Clamp(b))
 
 	fmt.Fprintf(w, "%d %d %d\n", rByte, gByte, bByte)
+}
+
+func linearToGamma(lc float64) float64 {
+	if lc <= 0 {
+		return 0
+	}
+	return math.Sqrt(lc)
 }

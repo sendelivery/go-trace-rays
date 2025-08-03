@@ -26,7 +26,7 @@ func (hr *HitRecord) SetFaceNormal(r ray.Ray, outwardNormal vec3.Vector3) {
 	if hr.FrontFace {
 		hr.normal = vec3.Duplicate(outwardNormal)
 	} else {
-		hr.normal = vec3.Mulf(outwardNormal, -1) // TODO: inverison ... is this right?
+		hr.normal = vec3.Mulf(outwardNormal, -1)
 	}
 }
 

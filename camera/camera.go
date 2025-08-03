@@ -15,9 +15,11 @@ import (
 )
 
 type Camera struct {
-	SamplesPerPixel  int          // Count of random samples for each pixel
-	AspectRatio      float64      // Ratio of image width over height
-	ImageWidth       int          // Rendered image width in pixel count
+	SamplesPerPixel int     // Count of random samples for each pixel
+	AspectRatio     float64 // Ratio of image width over height
+	ImageWidth      int     // Rendered image width in pixel count
+	MaxDepth        int     // Maximum number of ray bounces into the scene
+
 	imageHeight      int          // Rendered image height
 	centre           vec3.Vector3 // Camera center
 	pixel00Loc       vec3.Vector3 // Location of pixel 0, 0
@@ -31,6 +33,7 @@ func New() *Camera {
 		AspectRatio:     1.0,
 		ImageWidth:      100,
 		SamplesPerPixel: 1,
+		MaxDepth:        1,
 	}
 	return &c
 }
@@ -49,7 +52,7 @@ func (c *Camera) Render(world hittable.Hittabler) {
 			col := color.New(0, 0, 0)
 			for range c.SamplesPerPixel {
 				r := c.getRay(i, j)
-				col.Add(c.rayColor(r, world))
+				col.Add(c.rayColor(r, c.MaxDepth, world))
 			}
 			col.Mulf(c.pixelSampleScale)
 			color.WriteColor(os.Stdout, col)
@@ -116,9 +119,15 @@ func (c *Camera) sampleSquare() vec3.Vector3 {
 
 const dampen = 0.5
 
-func (c *Camera) rayColor(r ray.Ray, world hittable.Hittabler) color.Color {
-	if hr, ok := world.Hit(r, intervals.New(0, math.Inf(1))); ok {
-		return vec3.Mulf(vec3.Add(hr.Normal(), color.New(1, 1, 1)), 0.5)
+func (c *Camera) rayColor(r ray.Ray, depth int, world hittable.Hittabler) color.Color {
+	if depth <= 0 {
+		return color.New(0, 0, 0)
+	}
+
+	if hr, ok := world.Hit(r, intervals.New(1e-3, math.Inf(1))); ok {
+		// bounceDir := vec3.NewRandomOnHemisphere(hr.Normal()) // Random diffusion - rays are uniformly scattered
+		bounceDir := vec3.Add(hr.Normal(), vec3.NewRandomUnitVector()) // True Lambertian Reflection - more rays scatter towards the normal
+		return vec3.Mulf(c.rayColor(ray.New(hr.Point, bounceDir), depth-1, world), 0.5)
 	}
 
 	unitDirection := vec3.UnitVector(r.Direction())

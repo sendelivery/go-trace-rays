@@ -3,3 +3,6 @@ build:
 
 render: build
 	./bin/rt > image.ppm
+
+debug: build
+	./bin/rt

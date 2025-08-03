@@ -35,3 +35,6 @@ func linearToGamma(lc float64) float64 {
 	}
 	return math.Sqrt(lc)
 }
+
+var Black = vec3.New(0, 0, 0)
+var White = vec3.New(1, 1, 1)

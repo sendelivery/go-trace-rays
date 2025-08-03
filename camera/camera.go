@@ -8,7 +8,7 @@ import (
 
 	"github.com/sendelivery/go-trace-rays/color"
 	"github.com/sendelivery/go-trace-rays/interval"
-	"github.com/sendelivery/go-trace-rays/object"
+	"github.com/sendelivery/go-trace-rays/object/hittable"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/utility"
 	"github.com/sendelivery/go-trace-rays/vec3"
@@ -38,7 +38,7 @@ func New() *Camera {
 	return &c
 }
 
-func (c *Camera) Render(world object.Hittabler) {
+func (c *Camera) Render(world hittable.Hittabler) {
 	c.initialise()
 
 	// Render
@@ -119,24 +119,24 @@ func (c *Camera) sampleSquare() vec3.Vector3 {
 
 const dampen = 0.5
 
-func (c *Camera) rayColor(r ray.Ray, depth int, world object.Hittabler) color.Color {
+func (c *Camera) rayColor(r ray.Ray, depth int, world hittable.Hittabler) color.Color {
 	if depth <= 0 {
-		return color.New(0, 0, 0)
+		return color.Black
 	}
 
 	if hr, ok := world.Hit(r, interval.New(1e-3, math.Inf(1))); ok {
-		// bounceDir := vec3.NewRandomOnHemisphere(hr.Normal()) // Random diffusion - rays are uniformly scattered
-		bounceDir := vec3.Add(hr.Normal(), vec3.NewRandomUnitVector()) // True Lambertian Reflection - more rays scatter towards the normal
-		return vec3.Mulf(c.rayColor(ray.New(hr.Point, bounceDir), depth-1, world), 0.5)
+		if attenuation, scattered, ok := hr.Material().Scatter(r, hr.Point(), hr.Normal()); ok {
+			return vec3.Mulv(attenuation, c.rayColor(scattered, depth-1, world))
+		}
+		return color.Black
 	}
 
 	unitDirection := vec3.UnitVector(r.Direction())
 	a := dampen * (unitDirection.Y() + 1)
-	white := color.New(1, 1, 1)
 	blue := color.New(0.5, 0.7, 1)
 
 	return vec3.Add(
-		vec3.Mulf(white, (1.0-a)),
+		vec3.Mulf(color.White, (1.0-a)),
 		vec3.Mulf(blue, a),
 	)
 }

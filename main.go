@@ -2,16 +2,27 @@ package main
 
 import (
 	"github.com/sendelivery/go-trace-rays/camera"
-	"github.com/sendelivery/go-trace-rays/object"
+	"github.com/sendelivery/go-trace-rays/color"
+	"github.com/sendelivery/go-trace-rays/object/hittable"
+	"github.com/sendelivery/go-trace-rays/object/material"
 	"github.com/sendelivery/go-trace-rays/object/sphere"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
 func main() {
-	var world object.HittableList
-	s1 := sphere.New(vec3.New(0, 0, -1), 0.5)
-	s2 := sphere.New(vec3.New(0, -100.5, -1), 100)
-	world.Add(s1, s2)
+	var world hittable.HittableList
+
+	materialGround := material.NewLambertian(color.New(0.8, 0.8, 0))
+	materialCentre := material.NewLambertian(color.New(0.1, 0.2, 0.5))
+	materialLeft := material.NewMetal(color.New(0.8, 0.8, 0.8), 0.3)
+	materialRight := material.NewMetal(color.New(0.8, 0.6, 0.2), 1)
+
+	ground := sphere.New(vec3.New(0, -100.5, -1), 100, &materialGround)
+	centre := sphere.New(vec3.New(0, 0, -1.2), 0.5, &materialCentre)
+	left := sphere.New(vec3.New(-1, 0, -1), 0.5, &materialLeft)
+	right := sphere.New(vec3.New(1, 0, -1), 0.5, &materialRight)
+
+	world.Add(ground, centre, left, right)
 
 	cam := camera.New()
 	cam.AspectRatio = 16.0 / 9.0

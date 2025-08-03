@@ -1,7 +1,8 @@
-package object
+package hittable
 
 import (
 	"github.com/sendelivery/go-trace-rays/interval"
+	"github.com/sendelivery/go-trace-rays/object/material"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
@@ -14,26 +15,38 @@ type Hittabler interface {
 }
 
 type HitRecord struct {
-	Point, normal vec3.Vector3
-	T             float64
-	FrontFace     bool
-	// Material      material.Material
+	point, normal vec3.Vector3
+	t             float64
+	frontFace     bool
+	mat           material.Scatterer
 }
 
-// SetFaceNormal sets the HitRecord's normal vector.
+func NewHitRecord(r ray.Ray, t float64, outwardNormal vec3.Vector3, mat material.Scatterer) HitRecord {
+	hr := HitRecord{
+		t:     t,
+		point: r.At(t),
+		mat:   mat,
+	}
+	hr.setFaceNormal(r, outwardNormal)
+	return hr
+}
+
+// setFaceNormal sets the HitRecord's normal vector.
 // The outwardNormal argument is assumed to have unit length.
-func (hr *HitRecord) SetFaceNormal(r ray.Ray, outwardNormal vec3.Vector3) {
-	hr.FrontFace = vec3.Dot(r.Direction(), outwardNormal) < 0
-	if hr.FrontFace {
+func (hr *HitRecord) setFaceNormal(r ray.Ray, outwardNormal vec3.Vector3) {
+	hr.frontFace = vec3.Dot(r.Direction(), outwardNormal) < 0
+	if hr.frontFace {
 		hr.normal = vec3.Duplicate(outwardNormal)
 	} else {
 		hr.normal = vec3.Mulf(outwardNormal, -1)
 	}
 }
 
-func (hr *HitRecord) Normal() vec3.Vector3 {
-	return hr.normal
-}
+func (hr *HitRecord) Point() vec3.Vector3          { return hr.point }
+func (hr *HitRecord) Normal() vec3.Vector3         { return hr.normal }
+func (hr *HitRecord) T() float64                   { return hr.t }
+func (hr *HitRecord) FrontFace() bool              { return hr.frontFace }
+func (hr *HitRecord) Material() material.Scatterer { return hr.mat }
 
 type HittableList struct {
 	objects []Hittabler
@@ -55,7 +68,7 @@ func (hl HittableList) Hit(r ray.Ray, rt interval.Interval) (HitRecord, bool) {
 	for _, o := range hl.objects {
 		if hr, ok := o.Hit(r, interval.New(rt.Min, closest)); ok {
 			hitAnything = true
-			closest = hr.T
+			closest = hr.T()
 			result = hr
 		}
 	}

@@ -174,6 +174,17 @@ func UnitVector(v Vector3) Vector3 {
 	return v
 }
 
+// IsNearZero returns true if the Vector3 v is near zero in all dimensions.
+func IsNearZero(v Vector3) bool {
+	s := 1e-8
+	return math.Abs(v.x) < s && math.Abs(v.y) < s && math.Abs(v.z) < s
+}
+
+func Reflect(v, normal Vector3) Vector3 {
+	d := Dot(v, normal) * 2
+	return Sub(v, Mulf(normal, d))
+}
+
 // Vector utility functions
 
 // add takes in two Vector3 structs for addition.

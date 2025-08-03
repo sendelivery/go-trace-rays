@@ -5,7 +5,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/sendelivery/go-trace-rays/intervals"
+	"github.com/sendelivery/go-trace-rays/interval"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
@@ -21,7 +21,7 @@ func WriteColor(w io.Writer, pixelColor Color) {
 	b := linearToGamma(pixelColor.Z())
 
 	// Translate [0,1] component values to the byte range [0,255]
-	intensity := intervals.New(0, 0.999)
+	intensity := interval.New(0, 0.999)
 	rByte := int(256 * intensity.Clamp(r))
 	gByte := int(256 * intensity.Clamp(g))
 	bByte := int(256 * intensity.Clamp(b))

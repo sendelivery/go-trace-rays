@@ -2,13 +2,13 @@ package main
 
 import (
 	"github.com/sendelivery/go-trace-rays/camera"
-	"github.com/sendelivery/go-trace-rays/hittable"
-	"github.com/sendelivery/go-trace-rays/hittable/sphere"
+	"github.com/sendelivery/go-trace-rays/object"
+	"github.com/sendelivery/go-trace-rays/object/sphere"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
 func main() {
-	var world hittable.HittableList
+	var world object.HittableList
 	s1 := sphere.New(vec3.New(0, 0, -1), 0.5)
 	s2 := sphere.New(vec3.New(0, -100.5, -1), 100)
 	world.Add(s1, s2)

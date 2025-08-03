@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	utility "github.com/sendelivery/go-trace-rays/utlity"
+	"github.com/sendelivery/go-trace-rays/utility"
 )
 
 type Vector3 struct {

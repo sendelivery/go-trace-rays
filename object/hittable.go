@@ -1,7 +1,7 @@
-package hittable
+package object
 
 import (
-	"github.com/sendelivery/go-trace-rays/intervals"
+	"github.com/sendelivery/go-trace-rays/interval"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
@@ -10,13 +10,14 @@ type Hittabler interface {
 	// Hit takes in a Ray and a range, returning a pointer to a HitRecord and a bool
 	// indicating if the object was hit by the ray. The pointer will be nil and the bool
 	// false if it was not hit.
-	Hit(r ray.Ray, rt intervals.Interval) (HitRecord, bool)
+	Hit(r ray.Ray, rt interval.Interval) (HitRecord, bool)
 }
 
 type HitRecord struct {
 	Point, normal vec3.Vector3
 	T             float64
 	FrontFace     bool
+	// Material      material.Material
 }
 
 // SetFaceNormal sets the HitRecord's normal vector.
@@ -46,13 +47,13 @@ func (hl *HittableList) Add(o ...Hittabler) {
 	hl.objects = append(hl.objects, o...)
 }
 
-func (hl HittableList) Hit(r ray.Ray, rt intervals.Interval) (HitRecord, bool) {
+func (hl HittableList) Hit(r ray.Ray, rt interval.Interval) (HitRecord, bool) {
 	var result HitRecord
 	var hitAnything bool
 	closest := rt.Max
 
 	for _, o := range hl.objects {
-		if hr, ok := o.Hit(r, intervals.New(rt.Min, closest)); ok {
+		if hr, ok := o.Hit(r, interval.New(rt.Min, closest)); ok {
 			hitAnything = true
 			closest = hr.T
 			result = hr

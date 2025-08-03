@@ -3,8 +3,8 @@ package sphere
 import (
 	"math"
 
-	"github.com/sendelivery/go-trace-rays/hittable"
-	"github.com/sendelivery/go-trace-rays/intervals"
+	"github.com/sendelivery/go-trace-rays/interval"
+	"github.com/sendelivery/go-trace-rays/object"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
@@ -18,7 +18,7 @@ func New(centre vec3.Vector3, radius float64) Sphere {
 	return Sphere{centre, math.Max(0, radius)}
 }
 
-func (s Sphere) Hit(r ray.Ray, rt intervals.Interval) (hittable.HitRecord, bool) {
+func (s Sphere) Hit(r ray.Ray, rt interval.Interval) (object.HitRecord, bool) {
 	oc := vec3.Sub(s.centre, r.Origin())
 	a := r.Direction().LengthSquared()
 	h := vec3.Dot(r.Direction(), oc)
@@ -26,7 +26,7 @@ func (s Sphere) Hit(r ray.Ray, rt intervals.Interval) (hittable.HitRecord, bool)
 
 	discriminant := h*h - a*c
 	if discriminant < 0 {
-		return hittable.HitRecord{}, false
+		return object.HitRecord{}, false
 	}
 
 	sqrtd := math.Sqrt(discriminant)
@@ -36,11 +36,11 @@ func (s Sphere) Hit(r ray.Ray, rt intervals.Interval) (hittable.HitRecord, bool)
 	if !rt.Surrounds(root) {
 		root = (h + sqrtd) / a
 		if !rt.Surrounds(root) {
-			return hittable.HitRecord{}, false
+			return object.HitRecord{}, false
 		}
 	}
 
-	hr := hittable.HitRecord{
+	hr := object.HitRecord{
 		T:     root,
 		Point: r.At(root),
 	}

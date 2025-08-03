@@ -10,23 +10,27 @@ import (
 	"github.com/sendelivery/go-trace-rays/hittable"
 	"github.com/sendelivery/go-trace-rays/intervals"
 	"github.com/sendelivery/go-trace-rays/ray"
+	utility "github.com/sendelivery/go-trace-rays/utlity"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
 type Camera struct {
-	AspectRatio float64      // Ratio of image width over height
-	ImageWidth  int          // Rendered image width in pixel count
-	imageHeight int          // Rendered image height
-	centre      vec3.Vector3 // Camera center
-	pixel00Loc  vec3.Vector3 // Location of pixel 0, 0
-	pixelDeltaU vec3.Vector3 // Offset to pixel to the right
-	pixelDeltaV vec3.Vector3 // Offset to pixel below
+	SamplesPerPixel  int          // Count of random samples for each pixel
+	AspectRatio      float64      // Ratio of image width over height
+	ImageWidth       int          // Rendered image width in pixel count
+	imageHeight      int          // Rendered image height
+	centre           vec3.Vector3 // Camera center
+	pixel00Loc       vec3.Vector3 // Location of pixel 0, 0
+	pixelDeltaU      vec3.Vector3 // Offset to pixel to the right
+	pixelDeltaV      vec3.Vector3 // Offset to pixel below
+	pixelSampleScale float64      // Color scale factor for a sum of pixel samples
 }
 
 func New() *Camera {
 	c := Camera{
-		AspectRatio: 1.0,
-		ImageWidth:  100,
+		AspectRatio:     1.0,
+		ImageWidth:      100,
+		SamplesPerPixel: 1,
 	}
 	return &c
 }
@@ -42,18 +46,12 @@ func (c *Camera) Render(world hittable.Hittabler) {
 	for j := range c.imageHeight {
 		fmt.Fprintf(os.Stderr, "\rScanlines remaining: %d ", c.imageHeight-j)
 		for i := range c.ImageWidth {
-			pixelCentre := vec3.Add(
-				c.pixel00Loc,
-				vec3.Add(
-					vec3.Mulf(c.pixelDeltaU, float64(i)),
-					vec3.Mulf(c.pixelDeltaV, float64(j)),
-				),
-			)
-
-			rayDirection := vec3.Sub(pixelCentre, c.centre)
-			r := ray.New(c.centre, rayDirection)
-
-			col := c.rayColor(r, world)
+			col := color.New(0, 0, 0)
+			for range c.SamplesPerPixel {
+				r := c.getRay(i, j)
+				col.Add(c.rayColor(r, world))
+			}
+			col.Mulf(c.pixelSampleScale)
 			color.WriteColor(os.Stdout, col)
 		}
 	}
@@ -66,6 +64,8 @@ func (c *Camera) Render(world hittable.Hittabler) {
 func (c *Camera) initialise() {
 	// Calculate image height, ensuring it's at least 1
 	c.imageHeight = max(int(float64(c.ImageWidth)/c.AspectRatio), 1)
+
+	c.pixelSampleScale = 1.0 / float64(c.SamplesPerPixel)
 
 	c.centre = vec3.New(0, 0, 0)
 
@@ -92,6 +92,26 @@ func (c *Camera) initialise() {
 		vec3.Div(viewportV, 2),
 	)
 	c.pixel00Loc = vec3.Add(viewportUpperLeft, vec3.Mulf(vec3.Add(c.pixelDeltaU, c.pixelDeltaV), 0.5)) // Inset pixels
+}
+
+// getRay construct a camera ray originating from the origin and directed at a randomly sampled
+// point around the pixel location i, j
+func (c *Camera) getRay(i, j int) ray.Ray {
+	offset := c.sampleSquare()
+	pixelSample := vec3.Add(
+		c.pixel00Loc,
+		vec3.Add(
+			vec3.Mulf(c.pixelDeltaU, float64(i)+offset.X()),
+			vec3.Mulf(c.pixelDeltaV, float64(j)+offset.Y()),
+		),
+	)
+	rayDirection := vec3.Sub(pixelSample, c.centre)
+	return ray.New(c.centre, rayDirection)
+}
+
+// sampleSquare returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square
+func (c *Camera) sampleSquare() vec3.Vector3 {
+	return vec3.New(utility.Random()-0.5, utility.Random()-0.5, 0)
 }
 
 const dampen = 0.5

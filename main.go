@@ -16,7 +16,7 @@ func main() {
 	materialCentre := material.NewLambertian(color.New(0.1, 0.2, 0.5))
 	materialLeft := material.NewDielectric(1.5)
 	materialBubble := material.NewDielectric(1 / 1.5)
-	materialRight := material.NewMetal(color.New(0.8, 0.6, 0.2), 0.5)
+	materialRight := material.NewMetal(color.New(0.8, 0.6, 0.2), 1)
 
 	ground := sphere.New(vec3.New(0, -100.5, -1), 100, &materialGround)
 	centre := sphere.New(vec3.New(0, 0, -1.2), 0.5, &materialCentre)
@@ -31,6 +31,11 @@ func main() {
 	cam.ImageWidth = 400
 	cam.SamplesPerPixel = 100
 	cam.MaxDepth = 50
+
+	cam.VerticalFov = 20
+	cam.LookFrom = vec3.New(-2, 2, 1)
+	cam.LookAt = vec3.New(0, 0, -1)
+	cam.VUp = vec3.New(0, 1, 0)
 
 	cam.Render(world)
 }

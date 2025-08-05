@@ -37,5 +37,8 @@ func main() {
 	cam.LookAt = vec3.New(0, 0, -1)
 	cam.VUp = vec3.New(0, 1, 0)
 
+	cam.DefocusAngle = 10
+	cam.FocusDistance = 3.4
+
 	cam.Render(world)
 }

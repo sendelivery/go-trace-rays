@@ -174,6 +174,15 @@ func UnitVector(v Vector3) Vector3 {
 	return v
 }
 
+func RandomInUnitDisk() Vector3 {
+	for {
+		p := New(utility.RandomN(-1, 1), utility.RandomN(-1, 1), 0)
+		if p.LengthSquared() < 1 {
+			return p
+		}
+	}
+}
+
 // IsNearZero returns true if the Vector3 v is near zero in all dimensions.
 func IsNearZero(v Vector3) bool {
 	s := 1e-8

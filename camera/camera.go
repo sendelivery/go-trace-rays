@@ -125,7 +125,7 @@ func (c *Camera) rayColor(r ray.Ray, depth int, world hittable.Hittabler) color.
 	}
 
 	if hr, ok := world.Hit(r, interval.New(1e-3, math.Inf(1))); ok {
-		if attenuation, scattered, ok := hr.Material().Scatter(r, hr.Point(), hr.Normal()); ok {
+		if attenuation, scattered, ok := hr.Material().Scatter(r, hr); ok {
 			return vec3.Mulv(attenuation, c.rayColor(scattered, depth-1, world))
 		}
 		return color.Black

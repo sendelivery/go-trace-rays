@@ -4,8 +4,7 @@ import (
 	"math"
 
 	"github.com/sendelivery/go-trace-rays/interval"
-	"github.com/sendelivery/go-trace-rays/object/hittable"
-	"github.com/sendelivery/go-trace-rays/object/material"
+	"github.com/sendelivery/go-trace-rays/object/hitrecord"
 	"github.com/sendelivery/go-trace-rays/ray"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
@@ -13,14 +12,14 @@ import (
 type Sphere struct {
 	centre vec3.Vector3
 	radius float64
-	mat    material.Scatterer
+	mat    hitrecord.Scatterer
 }
 
-func New(centre vec3.Vector3, radius float64, mat material.Scatterer) Sphere {
+func New(centre vec3.Vector3, radius float64, mat hitrecord.Scatterer) Sphere {
 	return Sphere{centre, math.Max(0, radius), mat}
 }
 
-func (s Sphere) Hit(r ray.Ray, rt interval.Interval) (hittable.HitRecord, bool) {
+func (s Sphere) Hit(r ray.Ray, rt interval.Interval) (hitrecord.HitRecord, bool) {
 	oc := vec3.Sub(s.centre, r.Origin())
 	a := r.Direction().LengthSquared()
 	h := vec3.Dot(r.Direction(), oc)
@@ -28,7 +27,7 @@ func (s Sphere) Hit(r ray.Ray, rt interval.Interval) (hittable.HitRecord, bool) 
 
 	discriminant := h*h - a*c
 	if discriminant < 0 {
-		return hittable.HitRecord{}, false
+		return hitrecord.HitRecord{}, false
 	}
 
 	sqrtd := math.Sqrt(discriminant)
@@ -38,11 +37,11 @@ func (s Sphere) Hit(r ray.Ray, rt interval.Interval) (hittable.HitRecord, bool) 
 	if !rt.Surrounds(root) {
 		root = (h + sqrtd) / a
 		if !rt.Surrounds(root) {
-			return hittable.HitRecord{}, false
+			return hitrecord.HitRecord{}, false
 		}
 	}
 	outwardNormal := vec3.Div(vec3.Sub(r.At(root), s.centre), s.radius)
-	hr := hittable.NewHitRecord(r, root, outwardNormal, s.mat)
+	hr := hitrecord.New(r, root, outwardNormal, s.mat)
 
 	return hr, true
 }

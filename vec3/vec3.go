@@ -185,6 +185,23 @@ func Reflect(v, normal Vector3) Vector3 {
 	return Sub(v, Mulf(normal, d))
 }
 
+func Refract(v, normal Vector3, etaiOverEtat float64) Vector3 {
+	nv := Mulf(v, -1)
+	cosTheta := min(Dot(nv, normal), 1)
+
+	rOutPerpendicular := Mulf(
+		Add(v, Mulf(normal, cosTheta)),
+		etaiOverEtat,
+	)
+
+	rOutParallel := Mulf(
+		normal,
+		-math.Sqrt(math.Abs(1.0-rOutPerpendicular.LengthSquared())),
+	)
+
+	return Add(rOutPerpendicular, rOutParallel)
+}
+
 // Vector utility functions
 
 // add takes in two Vector3 structs for addition.

@@ -11,8 +11,8 @@ type Lambertian struct {
 	albedo color.Color
 }
 
-func NewLambertian(albedo color.Color) Lambertian {
-	return Lambertian{
+func NewLambertian(albedo color.Color) *Lambertian {
+	return &Lambertian{
 		albedo: albedo,
 	}
 }

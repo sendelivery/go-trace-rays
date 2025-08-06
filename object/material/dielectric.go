@@ -14,8 +14,8 @@ type Dielectric struct {
 	refractionIndex float64
 }
 
-func NewDielectric(refractionIndex float64) Dielectric {
-	return Dielectric{
+func NewDielectric(refractionIndex float64) *Dielectric {
+	return &Dielectric{
 		refractionIndex: refractionIndex,
 	}
 }

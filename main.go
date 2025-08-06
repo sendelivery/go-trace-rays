@@ -3,42 +3,72 @@ package main
 import (
 	"github.com/sendelivery/go-trace-rays/camera"
 	"github.com/sendelivery/go-trace-rays/color"
+	"github.com/sendelivery/go-trace-rays/object/hitrecord"
 	"github.com/sendelivery/go-trace-rays/object/hittable"
 	"github.com/sendelivery/go-trace-rays/object/material"
 	"github.com/sendelivery/go-trace-rays/object/sphere"
+	"github.com/sendelivery/go-trace-rays/utility"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
 func main() {
 	var world hittable.HittableList
 
-	materialGround := material.NewLambertian(color.New(0.8, 0.8, 0))
-	materialCentre := material.NewLambertian(color.New(0.1, 0.2, 0.5))
-	materialLeft := material.NewDielectric(1.5)
-	materialBubble := material.NewDielectric(1 / 1.5)
-	materialRight := material.NewMetal(color.New(0.8, 0.6, 0.2), 1)
+	groundMaterial := material.NewLambertian(color.New(0.5, 0.5, 0.5))
+	groundSphere := sphere.New(vec3.New(0, -1000, 0), 1000, groundMaterial)
 
-	ground := sphere.New(vec3.New(0, -100.5, -1), 100, &materialGround)
-	centre := sphere.New(vec3.New(0, 0, -1.2), 0.5, &materialCentre)
-	left := sphere.New(vec3.New(-1, 0, -1), 0.5, &materialLeft)
-	bubble := sphere.New(vec3.New(-1, 0, -1), 0.4, &materialBubble)
-	right := sphere.New(vec3.New(1, 0, -1), 0.5, &materialRight)
+	world.Add(groundSphere)
 
-	world.Add(ground, centre, left, bubble, right)
+	for a := -11; a < 11; a++ {
+		for b := -11; b < 11; b++ {
+			chooseMat := utility.Random()
+			centre := vec3.New(float64(a)+0.9*utility.Random(), 0.2, float64(b)+0.9*utility.Random())
+
+			if vec3.Sub(centre, vec3.New(4, 0.2, 0)).Length() > 0.9 {
+				var sphereMat hitrecord.Scatterer
+
+				if chooseMat < 0.8 {
+					// diffuse
+					albedo := color.NewRandom(0, 1)
+					sphereMat = material.NewLambertian(albedo)
+				} else if chooseMat < 0.95 {
+					// metal
+					albedo := color.NewRandom(0.5, 1)
+					fuzz := utility.RandomN(0, 0.5)
+					sphereMat = material.NewMetal(albedo, fuzz)
+				} else {
+					// glass
+					sphereMat = material.NewDielectric(1.5)
+				}
+
+				world.Add(sphere.New(centre, 0.2, sphereMat))
+			}
+		}
+	}
+
+	mat1 := material.NewDielectric(1.5)
+	mat2 := material.NewLambertian(color.New(0.4, 0.2, 0.1))
+	mat3 := material.NewMetal(color.New(0.7, 0.6, 0.5), 0.0)
+
+	world.Add(
+		sphere.New(vec3.New(0, 1, 0), 1, mat1),
+		sphere.New(vec3.New(-4, 1, 0), 1, mat2),
+		sphere.New(vec3.New(4, 1, 0), 1, mat3),
+	)
 
 	cam := camera.New()
 	cam.AspectRatio = 16.0 / 9.0
-	cam.ImageWidth = 400
-	cam.SamplesPerPixel = 100
+	cam.ImageWidth = 1200
+	cam.SamplesPerPixel = 500
 	cam.MaxDepth = 50
 
 	cam.VerticalFov = 20
-	cam.LookFrom = vec3.New(-2, 2, 1)
-	cam.LookAt = vec3.New(0, 0, -1)
+	cam.LookFrom = vec3.New(13, 2, 3)
+	cam.LookAt = vec3.New(0, 0, 0)
 	cam.VUp = vec3.New(0, 1, 0)
 
-	cam.DefocusAngle = 10
-	cam.FocusDistance = 3.4
+	cam.DefocusAngle = 0.6
+	cam.FocusDistance = 10.0
 
 	cam.Render(world)
 }

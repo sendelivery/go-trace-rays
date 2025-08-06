@@ -12,8 +12,8 @@ type Metal struct {
 	fuzz   float64
 }
 
-func NewMetal(albedo color.Color, fuzz float64) Metal {
-	return Metal{
+func NewMetal(albedo color.Color, fuzz float64) *Metal {
+	return &Metal{
 		albedo: albedo,
 		fuzz:   min(fuzz, 1),
 	}

@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/sendelivery/go-trace-rays/interval"
+	"github.com/sendelivery/go-trace-rays/utility"
 	"github.com/sendelivery/go-trace-rays/vec3"
 )
 
@@ -13,6 +14,14 @@ type Color = vec3.Vector3
 
 func New(r, g, b float64) Color {
 	return vec3.New(r, g, b)
+}
+
+func NewRandom(min, max float64) Color {
+	return vec3.New(
+		utility.RandomN(min, max),
+		utility.RandomN(min, max),
+		utility.RandomN(min, max),
+	)
 }
 
 func WriteColor(w io.Writer, pixelColor Color) {

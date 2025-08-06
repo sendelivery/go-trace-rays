@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/sendelivery/go-trace-rays/camera"
-	"github.com/sendelivery/go-trace-rays/color"
-	"github.com/sendelivery/go-trace-rays/object/hitrecord"
-	"github.com/sendelivery/go-trace-rays/object/hittable"
-	"github.com/sendelivery/go-trace-rays/object/material"
-	"github.com/sendelivery/go-trace-rays/object/sphere"
-	"github.com/sendelivery/go-trace-rays/utility"
-	"github.com/sendelivery/go-trace-rays/vec3"
+	"github.com/sendelivery/go-trace-rays/internal/camera"
+	"github.com/sendelivery/go-trace-rays/internal/color"
+	"github.com/sendelivery/go-trace-rays/internal/object/hitrecord"
+	"github.com/sendelivery/go-trace-rays/internal/object/hittable"
+	"github.com/sendelivery/go-trace-rays/internal/object/material"
+	"github.com/sendelivery/go-trace-rays/internal/object/sphere"
+	"github.com/sendelivery/go-trace-rays/internal/utility"
+	"github.com/sendelivery/go-trace-rays/internal/vec3"
 )
 
 func main() {

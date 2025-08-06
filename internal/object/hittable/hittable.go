@@ -1,9 +1,9 @@
 package hittable
 
 import (
-	"github.com/sendelivery/go-trace-rays/interval"
-	"github.com/sendelivery/go-trace-rays/object/hitrecord"
-	"github.com/sendelivery/go-trace-rays/ray"
+	"github.com/sendelivery/go-trace-rays/internal/interval"
+	"github.com/sendelivery/go-trace-rays/internal/object/hitrecord"
+	"github.com/sendelivery/go-trace-rays/internal/ray"
 )
 
 type Hittabler interface {

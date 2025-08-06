@@ -1,9 +1,9 @@
 package hitrecord
 
 import (
-	"github.com/sendelivery/go-trace-rays/color"
-	"github.com/sendelivery/go-trace-rays/ray"
-	"github.com/sendelivery/go-trace-rays/vec3"
+	"github.com/sendelivery/go-trace-rays/internal/color"
+	"github.com/sendelivery/go-trace-rays/internal/ray"
+	"github.com/sendelivery/go-trace-rays/internal/vec3"
 )
 
 type Scatterer interface {

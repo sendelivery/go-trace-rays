@@ -1,6 +1,6 @@
 package ray
 
-import "github.com/sendelivery/go-trace-rays/vec3"
+import "github.com/sendelivery/go-trace-rays/internal/vec3"
 
 type Ray struct {
 	origin    vec3.Vector3

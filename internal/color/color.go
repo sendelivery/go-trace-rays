@@ -5,9 +5,9 @@ import (
 	"io"
 	"math"
 
-	"github.com/sendelivery/go-trace-rays/interval"
-	"github.com/sendelivery/go-trace-rays/utility"
-	"github.com/sendelivery/go-trace-rays/vec3"
+	"github.com/sendelivery/go-trace-rays/internal/interval"
+	"github.com/sendelivery/go-trace-rays/internal/utility"
+	"github.com/sendelivery/go-trace-rays/internal/vec3"
 )
 
 type Color = vec3.Vector3

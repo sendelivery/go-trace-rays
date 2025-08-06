@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sendelivery/go-trace-rays/vec3"
+	"github.com/sendelivery/go-trace-rays/internal/vec3"
 )
 
 // Vector3 struct methods that mutate the struct

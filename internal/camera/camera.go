@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/sendelivery/go-trace-rays/color"
-	"github.com/sendelivery/go-trace-rays/interval"
-	"github.com/sendelivery/go-trace-rays/object/hittable"
-	"github.com/sendelivery/go-trace-rays/ray"
-	"github.com/sendelivery/go-trace-rays/utility"
-	"github.com/sendelivery/go-trace-rays/vec3"
+	"github.com/sendelivery/go-trace-rays/internal/color"
+	"github.com/sendelivery/go-trace-rays/internal/interval"
+	"github.com/sendelivery/go-trace-rays/internal/object/hittable"
+	"github.com/sendelivery/go-trace-rays/internal/ray"
+	"github.com/sendelivery/go-trace-rays/internal/utility"
+	"github.com/sendelivery/go-trace-rays/internal/vec3"
 )
 
 type Camera struct {

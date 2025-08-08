@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"runtime"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/sendelivery/go-trace-rays/internal/color"
+	"github.com/sendelivery/go-trace-rays/internal/image"
 	"github.com/sendelivery/go-trace-rays/internal/interval"
 	"github.com/sendelivery/go-trace-rays/internal/object/hittable"
 	"github.com/sendelivery/go-trace-rays/internal/ray"
@@ -37,6 +41,12 @@ type Camera struct {
 	u, v, w          vec3.Vector3 // Camera frame basis vectors
 	defocusDiskU     vec3.Vector3 // Defocus disk horizontal radius
 	defocusDiskV     vec3.Vector3 // Defocus disk vertical radius
+
+	// Below fields are used by the parallel workflow
+	parallel  bool        // Whether to render the image using the parallel workflow
+	workers   int         // Number of goroutines rendering the image
+	img       image.Image // An Image struct used by the parallel workflow
+	numChunks int         // Number of chunks to break the image up in
 }
 
 func New() *Camera {
@@ -58,27 +68,74 @@ func New() *Camera {
 func (c *Camera) Render(world hittable.Hittabler) {
 	c.initialise()
 
-	// Render
+	// Timer
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start).Seconds()
+		c.statusf("\rDone in %.2fs.         \n", elapsed)
+	}()
+
 	fmt.Printf("P3\n%d %d\n255\n", c.ImageWidth, c.imageHeight)
 
-	start := time.Now()
-
 	for j := range c.imageHeight {
-		fmt.Fprintf(os.Stderr, "\rScanlines remaining: %d ", c.imageHeight-j)
+		c.statusf("\rScanlines remaining: %d ", c.imageHeight-j)
 		for i := range c.ImageWidth {
-			col := color.New(0, 0, 0)
-			for range c.SamplesPerPixel {
-				r := c.getRay(i, j)
-				col.Add(c.rayColor(r, c.MaxDepth, world))
-			}
-			col.Mulf(c.pixelSampleScale)
+			col := c.calculatePixel(i, j, world)
 			color.WriteColor(os.Stdout, col)
 		}
 	}
+}
 
-	elapsed := time.Since(start).Milliseconds()
+func (c *Camera) RenderParallel(world hittable.Hittabler) {
+	c.parallel = true
+	c.initialise()
 
-	fmt.Fprintf(os.Stderr, "\rDone in %dms.         \n", elapsed)
+	c.statusf("%d workers\n", c.workers)
+	c.statusf("%d chunks\n", c.numChunks)
+
+	// Timer
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start).Seconds()
+		c.statusf("\rDone in %.2fs.         \n", elapsed)
+	}()
+
+	chunks := make(chan image.Chunk, c.numChunks)
+	c.queueChunks(chunks)
+	close(chunks) // All the data that needs to be sent has been sent
+
+	var wg sync.WaitGroup
+	wg.Add(c.numChunks)
+
+	chunksLeft := atomic.Int32{}
+	chunksLeft.Add(int32(c.numChunks))
+	c.statusf("\rChunks remaining: %d ", c.numChunks)
+
+	// Queue up the workers
+	for range c.workers {
+		go func() {
+			for ch := range chunks {
+				c.processChunk(ch, world)
+				chunksLeft.Add(-1)
+				c.statusf("\rChunks remaining: %d ", chunksLeft.Load())
+				wg.Done()
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	// Draw the image
+	fmt.Printf("P3\n%d %d\n255\n", c.ImageWidth, c.imageHeight)
+	for y := range c.imageHeight {
+		for x := range c.ImageWidth {
+			col, ok := c.img.Get(image.NewPixelCoord(x, y))
+			if !ok {
+				panic(fmt.Sprintf("issue when drawing image at coord %d, %d", x, y))
+			}
+			color.WriteColor(os.Stdout, col)
+		}
+	}
 }
 
 func (c *Camera) initialise() {
@@ -126,6 +183,41 @@ func (c *Camera) initialise() {
 	defocusRadius := c.FocusDistance * math.Tan(utility.Deg2Rad(c.DefocusAngle/2))
 	c.defocusDiskU = vec3.Mulf(c.u, defocusRadius)
 	c.defocusDiskV = vec3.Mulf(c.v, defocusRadius)
+
+	if !c.parallel {
+		return
+	}
+
+	// If left unspecified, set concurrency to max CPU - 2 to leave headroom for the system
+	if c.workers == 0 {
+		c.workers = max(runtime.NumCPU()-2, 1)
+	}
+
+	pixelCount := c.ImageWidth * c.imageHeight
+	c.numChunks = c.workers * c.workers
+
+	for c.workers > 1 {
+		if pixelCount/c.numChunks > 0 {
+			break
+		}
+
+		// Special case, our image is so small that evenly dividing it up across the number
+		// of workers would result in chunks less than 0 pixels in area. We'll reduce the
+		// workers by 20% until we reach an acceptable number of workers or 1.
+		c.workers = int(float64(c.workers) * 0.8)
+		c.numChunks = c.workers * c.workers
+	}
+
+	c.img = image.New(c.ImageWidth, c.imageHeight)
+}
+
+func (c *Camera) calculatePixel(x, y int, world hittable.Hittabler) color.Color {
+	col := color.New(0, 0, 0)
+	for range c.SamplesPerPixel {
+		r := c.getRay(x, y)
+		col.Add(c.rayColor(r, c.MaxDepth, world))
+	}
+	return *col.Mulf(c.pixelSampleScale)
 }
 
 // getRay construct a camera ray originating from the defocus disk and directed at a randomly
@@ -183,4 +275,53 @@ func (c *Camera) rayColor(r ray.Ray, depth int, world hittable.Hittabler) color.
 		vec3.Mulf(color.White, (1.0-a)),
 		vec3.Mulf(blue, a),
 	)
+}
+
+// queueChunks sends all the chunks to be computed to the ch channel
+func (c *Camera) queueChunks(ch chan<- image.Chunk) {
+	chunkDeltaU := c.ImageWidth / c.workers
+	chunkDeltaV := c.imageHeight / c.workers
+
+	startY := 0
+
+	for j := range c.workers {
+		endY := startY + chunkDeltaV
+		if j == c.workers-1 {
+			endY = c.imageHeight
+		}
+
+		startX := 0
+
+		for i := range c.workers {
+			endX := startX + chunkDeltaU
+			if i == c.workers-1 {
+				endX = c.ImageWidth
+			}
+
+			ch <- image.NewChunk(
+				image.NewPixelCoord(startX, startY),
+				image.NewPixelCoord(endX, endY),
+			)
+
+			startX = endX
+		}
+		startY = endY
+	}
+}
+
+// processChunk calculates all the pixel colours for the given chunk and writes them to our
+// camera's img
+func (c *Camera) processChunk(chunk image.Chunk, world hittable.Hittabler) {
+	for x := chunk.Start().X(); x < chunk.End().X(); x++ {
+		for y := chunk.Start().Y(); y < chunk.End().Y(); y++ {
+			col := c.calculatePixel(x, y, world)
+			if err := c.img.Add(image.NewPixelCoord(x, y), col); err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
+func (c *Camera) statusf(format string, a ...any) {
+	fmt.Fprintf(os.Stderr, format, a...)
 }
